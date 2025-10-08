@@ -1,17 +1,17 @@
 import pandas as pd  # Library untuk manipulasi dan analisis data
 import matplotlib.pyplot as plt  # Library untuk visualisasi data
 import seaborn as sns  # Library untuk visualisasi statistik yang estetis
-from typing import List  # Untuk type hinting daftar
+from typing import List, Optional  # Mengganti | dengan Optional untuk kompatibilitas
 
 
 # --- KONFIGURASI GLOBAL ---
-FILE_PATH = 'insurance.csv'  # Lokasi file CSV
+FILE_PATH = 'machine_learning/insurance.csv'  # Lokasi file CSV
 TARGET_COLUMN = 'charges'  # Kolom target untuk analisis
 NUMERICAL_COLS = ['age', 'bmi', 'children', 'charges']  # Kolom numerik
 CATEGORICAL_COLS = ['sex', 'smoker', 'region']  # Kolom kategorikal
 
 
-def load_data(filepath: str) -> pd.DataFrame | None:
+def load_data(filepath: str) -> Optional[pd.DataFrame]:
     """
     Memuat dataset dari file CSV.
 
@@ -19,14 +19,14 @@ def load_data(filepath: str) -> pd.DataFrame | None:
         filepath (str): Path menuju file CSV.
 
     Returns:
-        pd.DataFrame | None: DataFrame jika berhasil dimuat, atau None jika file tidak ditemukan.
+        Optional[pd.DataFrame]: DataFrame jika berhasil dimuat, atau None jika file tidak ditemukan.
     """
     try:
         df = pd.read_csv(filepath)
         print(f"✅ Dataset berhasil dimuat dari '{filepath}'.")
         return df
     except FileNotFoundError:
-        print(f"❌ ERROR: File tidak ditemukan di '{filepath}'.")
+        print(f"❌ ERROR: File tidak ditemukan di '{filepath}'. Harap pastikan file CSV berada di direktori yang sama.")
         return None
 
 
@@ -46,7 +46,7 @@ def summarize_dataframe(df: pd.DataFrame, df_name: str = "DataFrame") -> None:
     print(df.describe().round(2))
     print("\n--- 5 Baris Pertama ---")
     print(df.head())
-    print(f"{'='*50}\n")
+    print(f"{'='*58}\n")
 
 
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -101,16 +101,8 @@ def plot_distributions(df: pd.DataFrame, columns: List[str], plot_type: str) -> 
     plt.show()
 
 
-def plot_core_analyses(df: pd.DataFrame, num_cols: List[str], target: str) -> None:
-    """
-    Membuat visualisasi analisis inti: boxplot dan heatmap korelasi.
-
-    Args:
-        df (pd.DataFrame): DataFrame yang berisi data.
-        num_cols (List[str]): Daftar kolom numerik untuk heatmap.
-        target (str): Kolom target untuk analisis.
-    """
-    # Boxplot untuk melihat pengaruh status perokok terhadap kolom target
+def plot_smoker_vs_charges(df: pd.DataFrame, target: str) -> None:
+    """Membuat boxplot untuk membandingkan biaya antara perokok dan bukan perokok."""
     plt.figure(figsize=(8, 6))
     sns.boxplot(x='smoker', y=target, data=df, palette='muted')
     plt.title(f'Perbandingan {target.capitalize()} antara Perokok dan Bukan Perokok', fontsize=14)
@@ -118,7 +110,9 @@ def plot_core_analyses(df: pd.DataFrame, num_cols: List[str], target: str) -> No
     plt.ylabel(target.capitalize(), fontsize=12)
     plt.show()
 
-    # Heatmap korelasi antar variabel numerik
+
+def plot_correlation_heatmap(df: pd.DataFrame, num_cols: List[str]) -> None:
+    """Membuat heatmap korelasi untuk variabel numerik."""
     plt.figure(figsize=(8, 6))
     correlation_matrix = df[num_cols].corr()
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=.5)
@@ -126,40 +120,66 @@ def plot_core_analyses(df: pd.DataFrame, num_cols: List[str], target: str) -> No
     plt.show()
 
 
+def show_avg_charges_by_region(df: pd.DataFrame, target: str) -> None:
+    """Menampilkan dan menganalisis rata-rata biaya per wilayah."""
+    print("\n--- Rata-rata Biaya Asuransi per Wilayah ---")
+    avg_charges = df.groupby('region')[target].mean().round(2).sort_values(ascending=False)
+    print(avg_charges)
+    print("-" * 45)
+
+
+def show_menu():
+    """Menampilkan menu pilihan untuk pengguna."""
+    print("\n--- MENU VISUALISASI DATA ASURANSI ---")
+    print("1. Tampilkan Distribusi Variabel Numerik")
+    print("2. Tampilkan Distribusi Variabel Kategorikal")
+    print("3. Tampilkan Perbandingan Biaya (Perokok vs. Bukan Perokok)")
+    print("4. Tampilkan Heatmap Korelasi Variabel Numerik")
+    print("5. Tampilkan Rata-rata Biaya per Wilayah")
+    print("6. Tampilkan Ulang Ringkasan Data")
+    print("7. Keluar")
+    print("-" * 41)
+
+
 def main():
     """
-    Fungsi utama untuk menjalankan alur analisis data.
+    Fungsi utama untuk menjalankan alur analisis data secara interaktif.
     """
-    # 1. Memuat data
     data = load_data(FILE_PATH)
     if data is None:
         return
 
-    # 2. Ringkasan data awal
     summarize_dataframe(data, "Data Awal")
-
-    # 3. Menangani nilai yang hilang
     cleaned_data = handle_missing_values(data)
 
-    # 4. Visualisasi distribusi
-    print("\n--- MEMBUAT VISUALISASI DISTRIBUSI ---")
-    plot_distributions(cleaned_data, NUMERICAL_COLS, 'numerical')
-    plot_distributions(cleaned_data, CATEGORICAL_COLS, 'categorical')
+    while True:
+        show_menu()
+        choice = input("Pilih opsi (1-7): ")
 
-    # 5. Visualisasi analisis inti
-    print("\n--- MEMBUAT VISUALISASI ANALISIS INTI ---")
-    plot_core_analyses(cleaned_data, NUMERICAL_COLS, TARGET_COLUMN)
-
-    # 6. Analisis tambahan (contoh: rata-rata biaya asuransi per wilayah)
-    print("\n--- ANALISIS TAMBAHAN ---")
-    avg_charges_by_region = cleaned_data.groupby('region')[TARGET_COLUMN].mean().round(2).sort_values(ascending=False)
-    print("Rata-rata Biaya Asuransi per Wilayah:")
-    print(avg_charges_by_region)
-
-    print("\n✅ Analisis selesai.")
+        if choice == '1':
+            print("\nMembuat plot distribusi variabel numerik...")
+            plot_distributions(cleaned_data, NUMERICAL_COLS, 'numerical')
+        elif choice == '2':
+            print("\nMembuat plot distribusi variabel kategorikal...")
+            plot_distributions(cleaned_data, CATEGORICAL_COLS, 'categorical')
+        elif choice == '3':
+            print("\nMembuat plot perbandingan biaya perokok...")
+            plot_smoker_vs_charges(cleaned_data, TARGET_COLUMN)
+        elif choice == '4':
+            print("\nMembuat heatmap korelasi...")
+            plot_correlation_heatmap(cleaned_data, NUMERICAL_COLS)
+        elif choice == '5':
+            show_avg_charges_by_region(cleaned_data, TARGET_COLUMN)
+        elif choice == '6':
+            summarize_dataframe(cleaned_data, "Data Bersih")
+        elif choice == '7':
+            print("\nTerima kasih telah menggunakan program analisis ini. Sampai jumpa!")
+            break
+        else:
+            print("\n❌ Pilihan tidak valid. Silakan masukkan angka antara 1 hingga 7.")
 
 
 if __name__ == "__main__":
-    sns.set_style("whitegrid")  # Mengatur gaya visualisasi global
-    plt.rcParams['figure.dpi'] = 100  # Resolusi plot
+    sns.set_style("whitegrid")
+    plt.rcParams['figure.dpi'] = 100
     main()
