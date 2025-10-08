@@ -56,3 +56,5 @@ plt.show()
 total_charges_region = data.groupby('region')['charges'].sum()
 print("\n=== TOTAL CHARGES PER REGION ===")
 print(total_charges_region)
+
+
