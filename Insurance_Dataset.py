@@ -5,7 +5,7 @@ from typing import List, Optional  # Mengganti | dengan Optional untuk kompatibi
 
 
 # --- KONFIGURASI GLOBAL ---
-FILE_PATH = 'machine_learning/insurance.csv'  # Lokasi file CSV
+FILE_PATH = 'insurance.csv'  # Lokasi file CSV
 TARGET_COLUMN = 'charges'  # Kolom target untuk analisis
 NUMERICAL_COLS = ['age', 'bmi', 'children', 'charges']  # Kolom numerik
 CATEGORICAL_COLS = ['sex', 'smoker', 'region']  # Kolom kategorikal
