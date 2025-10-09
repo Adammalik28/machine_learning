@@ -127,6 +127,49 @@ def show_avg_charges_by_region(df: pd.DataFrame, target: str) -> None:
     print(avg_charges)
     print("-" * 45)
 
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+def run_naive_bayes(df: pd.DataFrame):
+    """
+    Menerapkan algoritma Naive Bayes untuk memprediksi status perokok.
+    """
+    print("\n🚀 Memulai pelatihan model Naive Bayes untuk prediksi 'smoker'...")
+
+    # Salin data agar aman
+    data = df.copy()
+
+    # Encode kolom kategorikal
+    label_encoders = {}
+    for col in ['sex', 'region', 'smoker']:
+        le = LabelEncoder()
+        data[col] = le.fit_transform(data[col])
+        label_encoders[col] = le
+
+    # Pisahkan fitur (X) dan target (y)
+    X = data[['age', 'bmi', 'children', 'sex', 'region']]
+    y = data['smoker']
+
+    # Bagi data menjadi train dan test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Buat model dan latih
+    model = GaussianNB()
+    model.fit(X_train, y_train)
+
+    # Prediksi
+    y_pred = model.predict(X_test)
+
+    # Evaluasi hasil
+    acc = accuracy_score(y_test, y_pred)
+    print(f"\n✅ Akurasi Model: {acc:.2f}")
+    print("\n📊 Laporan Klasifikasi:")
+    print(classification_report(y_test, y_pred, target_names=['Non-Smoker', 'Smoker']))
+    print("\n🧩 Confusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+
 
 def show_menu():
     """Menampilkan menu pilihan untuk pengguna."""
@@ -137,7 +180,8 @@ def show_menu():
     print("4. Tampilkan Heatmap Korelasi Variabel Numerik")
     print("5. Tampilkan Rata-rata Biaya per Wilayah")
     print("6. Tampilkan Ulang Ringkasan Data")
-    print("7. Keluar")
+    print("7. Jalankan Model Naive Bayes untuk Prediksi 'Smoker'")
+    print("8. Keluar")
     print("-" * 41)
 
 
@@ -154,7 +198,7 @@ def main():
 
     while True:
         show_menu()
-        choice = input("Pilih opsi (1-7): ")
+        choice = input("Pilih opsi (1-8): ")
 
         if choice == '1':
             print("\nMembuat plot distribusi variabel numerik...")
@@ -173,6 +217,8 @@ def main():
         elif choice == '6':
             summarize_dataframe(cleaned_data, "Data Bersih")
         elif choice == '7':
+            run_naive_bayes(cleaned_data)
+        elif choice == '8':
             print("\nTerima kasih telah menggunakan program analisis ini. Sampai jumpa!")
             break
         else:
