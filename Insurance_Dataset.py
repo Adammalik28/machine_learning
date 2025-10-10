@@ -1,7 +1,7 @@
 # ==========================================================
 # 💡 PROGRAM ANALISIS DATA ASURANSI + PREDIKSI NAIVE BAYES
 # ==========================================================
-# Penulis: Adam Rizki, Faouza Adicha
+# Penulis: Adam Rizki, Faouza Adicha, M Krisna
 # Deskripsi:
 # Program ini memuat dataset asuransi, menampilkan visualisasi interaktif,
 # serta melatih model Naive Bayes untuk memprediksi status perokok (smoker).
