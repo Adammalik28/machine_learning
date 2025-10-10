@@ -1,81 +1,51 @@
-import pandas as pd  # Library untuk manipulasi dan analisis data
-import matplotlib.pyplot as plt  # Library untuk visualisasi data
-import seaborn as sns  # Library untuk visualisasi statistik yang estetis
-from typing import List, Optional  # Mengganti | dengan Optional untuk kompatibilitas
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
+
+# --- KONFIGURASI ---
+FILE_PATH = "insurance.csv"
+TARGET_COLUMN = "charges"
+NUMERICAL_COLS = ["age", "bmi", "children"]
+CATEGORICAL_COLS = ["sex", "smoker", "region"]
 
 
-# --- KONFIGURASI GLOBAL ---
-FILE_PATH = 'insurance.csv'  # Lokasi file CSV
-TARGET_COLUMN = 'charges'  # Kolom target untuk analisis
-NUMERICAL_COLS = ['age', 'bmi', 'children', 'charges']  # Kolom numerik
-CATEGORICAL_COLS = ['sex', 'smoker', 'region']  # Kolom kategorikal
+# --- FUNGSI PERSIAPAN DATA ---
+def load_and_prepare_data(filepath: str) -> pd.DataFrame:
+    df = pd.read_csv(filepath)
 
+    # Mengubah target menjadi kategori klasifikasi
+    df["charges_category"] = pd.qcut(df[TARGET_COLUMN], q=3, labels=["Rendah", "Sedang", "Tinggi"])
+    df = df.drop(TARGET_COLUMN, axis=1)
 
-def load_data(filepath: str) -> Optional[pd.DataFrame]:
-    """
-    Memuat dataset dari file CSV.
+    print(f"✅ Data dimuat ({len(df)} baris). Distribusi kategori:")
+    print(df["charges_category"].value_counts(), "\n")
 
-    Args:
-        filepath (str): Path menuju file CSV.
-
-    Returns:
-        Optional[pd.DataFrame]: DataFrame jika berhasil dimuat, atau None jika file tidak ditemukan.
-    """
-    try:
-        df = pd.read_csv(filepath)
-        print(f"✅ Dataset berhasil dimuat dari '{filepath}'.")
-        return df
-    except FileNotFoundError:
-        print(f"❌ ERROR: File tidak ditemukan di '{filepath}'. Harap pastikan file CSV berada di direktori yang sama.")
-        return None
-
-
-def summarize_dataframe(df: pd.DataFrame, df_name: str = "DataFrame") -> None:
-    """
-    Menampilkan ringkasan informasi dan statistik DataFrame.
-
-    Args:
-        df (pd.DataFrame): DataFrame yang akan diringkas.
-        df_name (str): Nama deskriptif untuk DataFrame.
-    """
-    print(f"\n{'='*20} RINGKASAN: {df_name.upper()} {'='*20}")
-    print(f"Bentuk Data: {df.shape[0]} baris, {df.shape[1]} kolom")
-    print("\n--- Informasi Tipe Data ---")
-    df.info()
-    print("\n--- Statistik Deskriptif (Numerik) ---")
-    print(df.describe().round(2))
-    print("\n--- 5 Baris Pertama ---")
-    print(df.head())
-    print(f"{'='*58}\n")
-
-
-def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Menangani nilai yang hilang dalam DataFrame.
-
-    Strategi saat ini: menghapus baris dengan nilai hilang.
-
-    Args:
-        df (pd.DataFrame): DataFrame input.
-
-    Returns:
-        pd.DataFrame: DataFrame yang telah bersih dari nilai hilang.
-    """
-    missing_count = df.isnull().sum().sum()
-    if missing_count > 0:
-        print(f"⚠️ Ditemukan {missing_count} nilai hilang. Menghapus baris terkait...")
-        df_cleaned = df.dropna()
-        print(f"✅ Nilai yang hilang telah dihapus. Sisa baris: {len(df_cleaned)}.")
-        return df_cleaned
-    
-    print("👍 Tidak terdapat nilai hilang dalam dataset.")
     return df
 
 
-def plot_distributions(df: pd.DataFrame, columns: List[str], plot_type: str) -> None:
-    """
-    Membuat visualisasi distribusi untuk kolom yang dipilih.
+# --- PIPELINE ---
+def build_pipeline() -> Pipeline:
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), NUMERICAL_COLS),
+            ("cat", OneHotEncoder(drop="first"), CATEGORICAL_COLS),
+        ]
+    )
 
+<<<<<<< HEAD
     Args:
         df (pd.DataFrame): DataFrame yang berisi data.
         columns (List[str]): Daftar kolom yang akan divisualisasikan.
@@ -229,3 +199,12 @@ if __name__ == "__main__":
     sns.set_style("whitegrid")
     plt.rcParams['figure.dpi'] = 100
     main()
+=======
+    pipeline = Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            ("classifier", GaussianNB()),
+        ]
+    )
+    return pipeline
+>>>>>>> 44cd5949a1b24767971fbfbd6a1238a1e455e7b5
