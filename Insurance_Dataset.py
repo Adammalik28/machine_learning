@@ -1,56 +1,74 @@
+# ==========================================================
+# 💡 PROGRAM ANALISIS DATA ASURANSI + PREDIKSI NAIVE BAYES
+# ==========================================================
+# Penulis: Adam Rizki, Faouza Adicha
+# Deskripsi:
+# Program ini memuat dataset asuransi, menampilkan visualisasi interaktif,
+# serta melatih model Naive Bayes untuk memprediksi status perokok (smoker).
+# ==========================================================
+
 import pandas as pd
-import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from typing import List, Optional
 
-from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    ConfusionMatrixDisplay,
-)
-
-# --- KONFIGURASI ---
-FILE_PATH = "insurance.csv"
-TARGET_COLUMN = "charges"
-NUMERICAL_COLS = ["age", "bmi", "children"]
-CATEGORICAL_COLS = ["sex", "smoker", "region"]
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
-# --- FUNGSI PERSIAPAN DATA ---
-def load_and_prepare_data(filepath: str) -> pd.DataFrame:
-    df = pd.read_csv(filepath)
+# --- KONFIGURASI GLOBAL ---
+FILE_PATH = 'insurance.csv'  # Lokasi file CSV
+TARGET_COLUMN = 'charges'  # Kolom target analisis
+NUMERICAL_COLS = ['age', 'bmi', 'children', 'charges']
+CATEGORICAL_COLS = ['sex', 'smoker', 'region']
 
-    # Mengubah target menjadi kategori klasifikasi
-    df["charges_category"] = pd.qcut(df[TARGET_COLUMN], q=3, labels=["Rendah", "Sedang", "Tinggi"])
-    df = df.drop(TARGET_COLUMN, axis=1)
 
-    print(f"✅ Data dimuat ({len(df)} baris). Distribusi kategori:")
-    print(df["charges_category"].value_counts(), "\n")
+# ==========================================================
+# 🧩 FUNGSI PENGOLAHAN DATA
+# ==========================================================
+def load_data(filepath: str) -> Optional[pd.DataFrame]:
+    """Memuat dataset dari file CSV."""
+    try:
+        df = pd.read_csv(filepath)
+        print(f"✅ Dataset berhasil dimuat dari '{filepath}'.")
+        return df
+    except FileNotFoundError:
+        print(f"❌ ERROR: File tidak ditemukan di '{filepath}'. Pastikan file CSV ada di direktori yang sama.")
+        return None
 
+
+def summarize_dataframe(df: pd.DataFrame, df_name: str = "DataFrame") -> None:
+    """Menampilkan ringkasan informasi dan statistik DataFrame."""
+    print(f"\n{'='*20} RINGKASAN: {df_name.upper()} {'='*20}")
+    print(f"Bentuk Data: {df.shape[0]} baris, {df.shape[1]} kolom")
+    print("\n--- Informasi Tipe Data ---")
+    df.info()
+    print("\n--- Statistik Deskriptif (Numerik) ---")
+    print(df.describe().round(2))
+    print("\n--- 5 Baris Pertama ---")
+    print(df.head())
+    print(f"{'='*58}\n")
+
+
+def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Menangani nilai yang hilang dalam DataFrame."""
+    missing_count = df.isnull().sum().sum()
+    if missing_count > 0:
+        print(f"⚠️ Ditemukan {missing_count} nilai hilang. Menghapus baris terkait...")
+        df_cleaned = df.dropna()
+        print(f"✅ Nilai yang hilang telah dihapus. Sisa baris: {len(df_cleaned)}.")
+        return df_cleaned
+    print("👍 Tidak terdapat nilai hilang dalam dataset.")
     return df
 
 
-# --- PIPELINE ---
-def build_pipeline() -> Pipeline:
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), NUMERICAL_COLS),
-            ("cat", OneHotEncoder(drop="first"), CATEGORICAL_COLS),
-        ]
-    )
-
-<<<<<<< HEAD
-    Args:
-        df (pd.DataFrame): DataFrame yang berisi data.
-        columns (List[str]): Daftar kolom yang akan divisualisasikan.
-        plot_type (str): Jenis plot ('numerical' atau 'categorical').
-    """
+# ==========================================================
+# 📊 FUNGSI VISUALISASI
+# ==========================================================
+def plot_distributions(df: pd.DataFrame, columns: List[str], plot_type: str) -> None:
+    """Membuat visualisasi distribusi untuk kolom numerik atau kategorikal."""
     if plot_type == 'numerical':
         plt.figure(figsize=(12, 8))
         for i, col in enumerate(columns, 1):
@@ -58,7 +76,7 @@ def build_pipeline() -> Pipeline:
             sns.histplot(df[col], kde=True, bins=30)
             plt.title(f'Distribusi Kolom {col.capitalize()}', fontsize=12)
         plt.suptitle('Distribusi Variabel Numerik', fontsize=16, y=1.02)
-    
+
     elif plot_type == 'categorical':
         plt.figure(figsize=(14, 5))
         for i, col in enumerate(columns, 1):
@@ -66,7 +84,7 @@ def build_pipeline() -> Pipeline:
             sns.countplot(x=col, data=df, palette='viridis', order=df[col].value_counts().index)
             plt.title(f'Distribusi Kolom {col.capitalize()}', fontsize=12)
         plt.suptitle('Distribusi Variabel Kategorikal', fontsize=16, y=1.02)
-        
+
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
@@ -91,24 +109,20 @@ def plot_correlation_heatmap(df: pd.DataFrame, num_cols: List[str]) -> None:
 
 
 def show_avg_charges_by_region(df: pd.DataFrame, target: str) -> None:
-    """Menampilkan dan menganalisis rata-rata biaya per wilayah."""
+    """Menampilkan rata-rata biaya asuransi per wilayah."""
     print("\n--- Rata-rata Biaya Asuransi per Wilayah ---")
     avg_charges = df.groupby('region')[target].mean().round(2).sort_values(ascending=False)
     print(avg_charges)
     print("-" * 45)
 
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+# ==========================================================
+# 🤖 MODEL NAIVE BAYES
+# ==========================================================
 def run_naive_bayes(df: pd.DataFrame):
-    """
-    Menerapkan algoritma Naive Bayes untuk memprediksi status perokok.
-    """
+    """Menerapkan algoritma Naive Bayes untuk memprediksi status perokok."""
     print("\n🚀 Memulai pelatihan model Naive Bayes untuk prediksi 'smoker'...")
 
-    # Salin data agar aman
     data = df.copy()
 
     # Encode kolom kategorikal
@@ -118,21 +132,21 @@ def run_naive_bayes(df: pd.DataFrame):
         data[col] = le.fit_transform(data[col])
         label_encoders[col] = le
 
-    # Pisahkan fitur (X) dan target (y)
+    # Fitur dan target
     X = data[['age', 'bmi', 'children', 'sex', 'region']]
     y = data['smoker']
 
-    # Bagi data menjadi train dan test
+    # Split train/test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Buat model dan latih
+    # Buat dan latih model
     model = GaussianNB()
     model.fit(X_train, y_train)
 
     # Prediksi
     y_pred = model.predict(X_test)
 
-    # Evaluasi hasil
+    # Evaluasi
     acc = accuracy_score(y_test, y_pred)
     print(f"\n✅ Akurasi Model: {acc:.2f}")
     print("\n📊 Laporan Klasifikasi:")
@@ -141,9 +155,11 @@ def run_naive_bayes(df: pd.DataFrame):
     print(confusion_matrix(y_test, y_pred))
 
 
+# ==========================================================
+# 🧭 MENU INTERAKTIF
+# ==========================================================
 def show_menu():
-    """Menampilkan menu pilihan untuk pengguna."""
-    print("\n--- MENU VISUALISASI DATA ASURANSI ---")
+    print("\n--- MENU ANALISIS DATA ASURANSI ---")
     print("1. Tampilkan Distribusi Variabel Numerik")
     print("2. Tampilkan Distribusi Variabel Kategorikal")
     print("3. Tampilkan Perbandingan Biaya (Perokok vs. Bukan Perokok)")
@@ -152,13 +168,11 @@ def show_menu():
     print("6. Tampilkan Ulang Ringkasan Data")
     print("7. Jalankan Model Naive Bayes untuk Prediksi 'Smoker'")
     print("8. Keluar")
-    print("-" * 41)
+    print("-" * 45)
 
 
 def main():
-    """
-    Fungsi utama untuk menjalankan alur analisis data secara interaktif.
-    """
+    """Fungsi utama untuk menjalankan alur analisis."""
     data = load_data(FILE_PATH)
     if data is None:
         return
@@ -171,16 +185,12 @@ def main():
         choice = input("Pilih opsi (1-8): ")
 
         if choice == '1':
-            print("\nMembuat plot distribusi variabel numerik...")
             plot_distributions(cleaned_data, NUMERICAL_COLS, 'numerical')
         elif choice == '2':
-            print("\nMembuat plot distribusi variabel kategorikal...")
             plot_distributions(cleaned_data, CATEGORICAL_COLS, 'categorical')
         elif choice == '3':
-            print("\nMembuat plot perbandingan biaya perokok...")
             plot_smoker_vs_charges(cleaned_data, TARGET_COLUMN)
         elif choice == '4':
-            print("\nMembuat heatmap korelasi...")
             plot_correlation_heatmap(cleaned_data, NUMERICAL_COLS)
         elif choice == '5':
             show_avg_charges_by_region(cleaned_data, TARGET_COLUMN)
@@ -189,22 +199,16 @@ def main():
         elif choice == '7':
             run_naive_bayes(cleaned_data)
         elif choice == '8':
-            print("\nTerima kasih telah menggunakan program analisis ini. Sampai jumpa!")
+            print("\nTerima kasih telah menggunakan program analisis ini. 👋")
             break
         else:
-            print("\n❌ Pilihan tidak valid. Silakan masukkan angka antara 1 hingga 7.")
+            print("\n❌ Pilihan tidak valid. Masukkan angka 1–8.")
 
 
+# ==========================================================
+# 🚀 EKSEKUSI PROGRAM
+# ==========================================================
 if __name__ == "__main__":
     sns.set_style("whitegrid")
     plt.rcParams['figure.dpi'] = 100
     main()
-=======
-    pipeline = Pipeline(
-        steps=[
-            ("preprocessor", preprocessor),
-            ("classifier", GaussianNB()),
-        ]
-    )
-    return pipeline
->>>>>>> 44cd5949a1b24767971fbfbd6a1238a1e455e7b5
