@@ -34,3 +34,21 @@ def load_and_prepare_data(filepath: str) -> pd.DataFrame:
     print(df["charges_category"].value_counts(), "\n")
 
     return df
+
+
+# --- PIPELINE ---
+def build_pipeline() -> Pipeline:
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), NUMERICAL_COLS),
+            ("cat", OneHotEncoder(drop="first"), CATEGORICAL_COLS),
+        ]
+    )
+
+    pipeline = Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            ("classifier", GaussianNB()),
+        ]
+    )
+    return pipeline
