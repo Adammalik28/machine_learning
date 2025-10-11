@@ -1,11 +1,10 @@
 # ==========================================================
 # 💡 PROGRAM ANALISIS DATA ASURANSI + PREDIKSI NAIVE BAYES
 # ==========================================================
-# Penulis: Adam Rizki, Faouza Adicha, M Krisna
-# Update: + Fitur Prediksi Manual oleh ChatGPT
+# Penulis: Adam Rizki, Faouza Adicha, & Update by ChatGPT
 # Deskripsi:
 # Program ini memuat dataset asuransi, menampilkan visualisasi interaktif,
-# serta melatih model Naive Bayes untuk memprediksi status perokok (smoker).
+# serta melatih berbagai varian model Naive Bayes untuk memprediksi status perokok (smoker).
 # ==========================================================
 
 import pandas as pd
@@ -15,7 +14,7 @@ from typing import List, Optional
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB, ComplementNB
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
@@ -121,8 +120,8 @@ def show_avg_charges_by_region(df: pd.DataFrame, target: str) -> None:
 # 🤖 MODEL NAIVE BAYES
 # ==========================================================
 def run_naive_bayes(df: pd.DataFrame):
-    """Menerapkan algoritma Naive Bayes untuk memprediksi status perokok."""
-    print("\n🚀 Memulai pelatihan model Naive Bayes untuk prediksi 'smoker'...")
+    """Menjalankan berbagai varian algoritma Naive Bayes untuk prediksi 'smoker'."""
+    print("\n🚀 Memulai pelatihan model Naive Bayes untuk prediksi 'smoker'...\n")
 
     data = df.copy()
 
@@ -137,76 +136,44 @@ def run_naive_bayes(df: pd.DataFrame):
     X = data[['age', 'bmi', 'children', 'sex', 'region']]
     y = data['smoker']
 
-    # Split train/test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-    # Buat dan latih model
-    model = GaussianNB()
+    # Pilih tipe Naive Bayes
+    print("Pilih tipe model Naive Bayes:")
+    print("1. GaussianNB (default, cocok untuk data kontinu)")
+    print("2. MultinomialNB (cocok untuk data diskrit / count)")
+    print("3. BernoulliNB (cocok untuk data biner 0/1)")
+    print("4. ComplementNB (varian Multinomial untuk data tidak seimbang)")
+    choice = input("Masukkan pilihan (1–4): ")
+
+    if choice == '2':
+        model = MultinomialNB()
+        model_name = "MultinomialNB"
+    elif choice == '3':
+        model = BernoulliNB()
+        model_name = "BernoulliNB"
+    elif choice == '4':
+        model = ComplementNB()
+        model_name = "ComplementNB"
+    else:
+        model = GaussianNB()
+        model_name = "GaussianNB"
+
+    # Latih model
     model.fit(X_train, y_train)
-
-    # Prediksi
     y_pred = model.predict(X_test)
 
-    # Evaluasi
+    # Evaluasi hasil
     acc = accuracy_score(y_test, y_pred)
-    print(f"\n✅ Akurasi Model: {acc:.2f}")
-    print("\n📊 Laporan Klasifikasi:")
+    print(f"\n✅ Model yang digunakan: {model_name}")
+    print(f"🎯 Akurasi Model: {acc:.2f}\n")
+    print("📊 Laporan Klasifikasi:")
     print(classification_report(y_test, y_pred, target_names=['Non-Smoker', 'Smoker']))
     print("\n🧩 Confusion Matrix:")
     print(confusion_matrix(y_test, y_pred))
-
-
-# ==========================================================
-# 🧮 FITUR BARU: PREDIKSI MANUAL
-# ==========================================================
-def predict_manual(df: pd.DataFrame):
-    """Memungkinkan pengguna memasukkan data baru untuk diprediksi status perokoknya."""
-    print("\n🧮 Prediksi Status Perokok Berdasarkan Input Pengguna")
-
-    data = df.copy()
-
-    # Encode kolom kategorikal
-    le_sex = LabelEncoder()
-    le_region = LabelEncoder()
-    le_smoker = LabelEncoder()
-
-    data['sex'] = le_sex.fit_transform(data['sex'])
-    data['region'] = le_region.fit_transform(data['region'])
-    data['smoker'] = le_smoker.fit_transform(data['smoker'])
-
-    # Latih model
-    X = data[['age', 'bmi', 'children', 'sex', 'region']]
-    y = data['smoker']
-    model = GaussianNB()
-    model.fit(X, y)
-
-    # Input pengguna
-    try:
-        age = int(input("Masukkan umur (contoh: 35): "))
-        bmi = float(input("Masukkan BMI (contoh: 26.5): "))
-        children = int(input("Masukkan jumlah anak (contoh: 2): "))
-        sex_input = input("Masukkan jenis kelamin (male/female): ").strip().lower()
-        region_input = input("Masukkan region (southwest/southeast/northwest/northeast): ").strip().lower()
-
-        # Validasi input
-        if sex_input not in le_sex.classes_:
-            print("⚠️ Jenis kelamin tidak valid, default = 'male'")
-            sex_input = 'male'
-        if region_input not in le_region.classes_:
-            print("⚠️ Region tidak valid, default = 'southwest'")
-            region_input = 'southwest'
-
-        sex_encoded = le_sex.transform([sex_input])[0]
-        region_encoded = le_region.transform([region_input])[0]
-
-        # Prediksi
-        new_data = [[age, bmi, children, sex_encoded, region_encoded]]
-        prediction = model.predict(new_data)[0]
-        result_label = le_smoker.inverse_transform([prediction])[0]
-
-        print(f"\n🎯 Berdasarkan input, prediksi status: **{result_label.upper()}**")
-    except Exception as e:
-        print(f"❌ Terjadi kesalahan input: {e}")
 
 
 # ==========================================================
@@ -221,8 +188,7 @@ def show_menu():
     print("5. Tampilkan Rata-rata Biaya per Wilayah")
     print("6. Tampilkan Ulang Ringkasan Data")
     print("7. Jalankan Model Naive Bayes untuk Prediksi 'Smoker'")
-    print("8. Prediksi Manual Berdasarkan Data Baru 🧮")
-    print("9. Keluar")
+    print("8. Keluar")
     print("-" * 45)
 
 
@@ -237,7 +203,7 @@ def main():
 
     while True:
         show_menu()
-        choice = input("Pilih opsi (1-9): ")
+        choice = input("Pilih opsi (1-8): ")
 
         if choice == '1':
             plot_distributions(cleaned_data, NUMERICAL_COLS, 'numerical')
@@ -254,12 +220,10 @@ def main():
         elif choice == '7':
             run_naive_bayes(cleaned_data)
         elif choice == '8':
-            predict_manual(cleaned_data)
-        elif choice == '9':
             print("\nTerima kasih telah menggunakan program analisis ini. 👋")
             break
         else:
-            print("\n❌ Pilihan tidak valid. Masukkan angka 1–9.")
+            print("\n❌ Pilihan tidak valid. Masukkan angka 1–8.")
 
 
 # ==========================================================
